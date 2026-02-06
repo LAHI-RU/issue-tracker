@@ -1,6 +1,13 @@
 const { ApiError } = require("../utils/apiError");
 
 function validate(schema) {
+  // Friendly dev error instead of "safeParse of undefined"
+  if (!schema || typeof schema.safeParse !== "function") {
+    throw new Error(
+      "validate() received an invalid Zod schema. Check your import/export of the schema."
+    );
+  }
+
   return (req, res, next) => {
     const result = schema.safeParse({
       body: req.body,
@@ -17,7 +24,6 @@ function validate(schema) {
       return next(new ApiError(400, "VALIDATION_ERROR", "Invalid request", details));
     }
 
-    // optionally assign parsed values (keeps future sanitization easy)
     req.validated = result.data;
     next();
   };
