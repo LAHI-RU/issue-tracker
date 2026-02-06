@@ -1,6 +1,7 @@
 const express = require("express");
 const { getDbState } = require("../db/connect");
 const authRoutes = require("./authRoutes");
+const issueRoutes = require("./issueRoutes");
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.get("/health", (req, res) => {
 });
 
 router.use("/auth", authRoutes);
+router.use("/issues", issueRoutes);
 
 module.exports = router;
