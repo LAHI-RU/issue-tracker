@@ -5,6 +5,11 @@ const issueRoutes = require("./issueRoutes");
 
 const router = express.Router();
 
+router.get("/", (req, res) => {
+  res.json({ ok: true, message: "Issue Tracker API" });
+});
+
+
 router.get("/health", (req, res) => {
   res.json({
     ok: true,
