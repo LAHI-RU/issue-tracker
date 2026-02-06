@@ -1,6 +1,10 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { logout } from "@/lib/auth";
 
 export default function AppLayout() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -9,13 +13,25 @@ export default function AppLayout() {
             Issue Tracker
           </Link>
 
-          <nav className="flex items-center gap-3 text-sm">
-            <Link className="text-muted-foreground hover:text-foreground" to="/">
+          <nav className="flex items-center gap-2">
+            <Link className="text-sm text-muted-foreground hover:text-foreground" to="/">
               Dashboard
             </Link>
-            <Link className="text-muted-foreground hover:text-foreground" to="/issues/new">
+            <Link className="text-sm text-muted-foreground hover:text-foreground" to="/issues/new">
               New Issue
             </Link>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-2"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+            >
+              Logout
+            </Button>
           </nav>
         </div>
       </header>

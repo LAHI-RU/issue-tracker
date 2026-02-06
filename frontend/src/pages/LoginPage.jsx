@@ -1,31 +1,82 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+import { login } from "@/lib/auth";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const [serverError, setServerError] = useState("");
+
+  const { register: rf, handleSubmit, formState } = useForm({
+    defaultValues: { email: "", password: "" }
+  });
+
+  const onSubmit = async (values) => {
+    setServerError("");
+    try {
+      await login(values);
+      navigate("/");
+    } catch (err) {
+      setServerError(err.message || "Login failed");
+    }
+  };
+
   return (
     <div className="mx-auto max-w-sm">
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">Login</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Real login form comes next step.
-        </p>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Login</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {serverError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          ) : null}
 
-        <div className="mt-4 text-sm">
-          <Link className="underline" to="/register">Create an account</Link>
-        </div>
+          <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                {...rf("email", { required: true })}
+              />
+            </div>
 
-        <div className="mt-6">
-          <button
-            className="w-full rounded-md bg-black px-3 py-2 text-sm font-medium text-white"
-            onClick={() => {
-              // TEMP ONLY
-              localStorage.setItem("token", "dev-token");
-              window.location.href = "/";
-            }}
-          >
-            Dev Login (temporary)
-          </button>
-        </div>
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Your password"
+                autoComplete="current-password"
+                {...rf("password", { required: true })}
+              />
+            </div>
+
+            <Button className="w-full" type="submit" disabled={formState.isSubmitting}>
+              {formState.isSubmitting ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
+
+          <div className="text-sm text-muted-foreground">
+            No account?{" "}
+            <Link className="underline text-foreground" to="/register">
+              Register
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
