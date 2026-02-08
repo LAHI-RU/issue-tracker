@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import IssueListCards from "@/components/IssueListCards";
 import PaginationBar from "@/components/PaginationBar";
 
 import { fetchIssueStats, fetchIssuesList } from "@/lib/issues";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 function StatCard({ label, value, loading }) {
   return (
@@ -42,11 +43,19 @@ function ListSkeleton() {
 export default function DashboardPage() {
   // UI state
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 400);
+
   const [status, setStatus] = useState("ALL");
   const [priority, setPriority] = useState("ALL");
   const [severity, setSeverity] = useState("ALL");
+
   const [page, setPage] = useState(1);
   const limit = 10;
+
+  // Reset to page 1 only when debounced search commits
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ]);
 
   // Stats
   const statsQuery = useQuery({
@@ -57,7 +66,7 @@ export default function DashboardPage() {
   // List params (convert ALL to undefined)
   const listParams = useMemo(
     () => ({
-      q: q.trim() || undefined,
+      q: debouncedQ.trim() || undefined,
       status: status === "ALL" ? undefined : status,
       priority: priority === "ALL" ? undefined : priority,
       severity: severity === "ALL" ? undefined : severity,
@@ -65,9 +74,10 @@ export default function DashboardPage() {
       limit,
       sort: "newest"
     }),
-    [q, status, priority, severity, page]
+    [debouncedQ, status, priority, severity, page]
   );
 
+  // Issues list
   const listQuery = useQuery({
     queryKey: ["issues", listParams],
     queryFn: ({ signal }) => fetchIssuesList({ ...listParams, signal }),
@@ -79,7 +89,7 @@ export default function DashboardPage() {
   const items = listQuery.data?.data?.items || [];
   const meta = listQuery.data?.meta || { page: 1, totalPages: 1 };
 
-  // Reset to page 1 when filters/search change
+  // Reset to page 1 for filters (immediate)
   function onFilterChange(fn) {
     fn();
     setPage(1);
@@ -105,15 +115,18 @@ export default function DashboardPage() {
 
       <Separator />
 
-      {/* Controls */}
+      {/* Controls + List */}
       <div className="rounded-xl border bg-card p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-4">
           <div className="md:col-span-2">
             <Input
               placeholder="Search issues by title/description..."
               value={q}
-              onChange={(e) => onFilterChange(() => setQ(e.target.value))}
+              onChange={(e) => setQ(e.target.value)}
             />
+            <div className="mt-1 text-xs text-muted-foreground">
+              Searching: <span className="font-medium text-foreground">{debouncedQ || "—"}</span>
+            </div>
           </div>
 
           <Select value={status} onValueChange={(v) => onFilterChange(() => setStatus(v))}>
@@ -172,6 +185,15 @@ export default function DashboardPage() {
             </div>
           ) : (
             <>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium text-foreground">{items.length}</span> item(s)
+                </div>
+                {listQuery.isFetching ? (
+                  <div className="text-sm text-muted-foreground">Updating…</div>
+                ) : null}
+              </div>
+
               <IssueListTable items={items} />
               <IssueListCards items={items} />
 
