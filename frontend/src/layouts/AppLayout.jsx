@@ -3,6 +3,8 @@ import { Toaster } from "sonner";
 import { useEffect } from "react";
 import { toastError } from "@/lib/toast";
 import { clearToken, getToken } from "@/lib/token";
+import ThemeToggle from "@/components/ThemeToggle";
+
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -54,6 +56,8 @@ export default function AppLayout() {
               >
                 New Issue
               </Link>
+
+              <ThemeToggle />
 
               <button
                 onClick={logout}
