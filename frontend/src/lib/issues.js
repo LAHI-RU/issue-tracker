@@ -30,3 +30,12 @@ export function updateIssueStatus(id, status) {
     body: { status }
   });
 }
+
+export function createIssue(payload) {
+  return apiFetch("/issues", { method: "POST", body: payload });
+}
+
+export function updateIssue(id, payload) {
+  return apiFetch(`/issues/${id}`, { method: "PATCH", body: payload });
+}
+

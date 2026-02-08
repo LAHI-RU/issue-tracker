@@ -1,6 +1,8 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
+import { Toaster } from "sonner";
+
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -37,6 +39,7 @@ export default function AppLayout() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
+        <Toaster richColors position="top-right" />
         <Outlet />
       </main>
     </div>
