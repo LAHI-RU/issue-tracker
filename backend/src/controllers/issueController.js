@@ -146,7 +146,7 @@ async function issueStats(req, res, next) {
     const result = { OPEN: 0, IN_PROGRESS: 0, RESOLVED: 0, CLOSED: 0 };
     for (const row of counts) result[row._id] = row.count;
 
-    res.json({ data: { counts: result } });
+    res.json({ data: { counts: result, stats: result } });
   } catch (err) {
     next(err);
   }

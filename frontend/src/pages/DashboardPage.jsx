@@ -70,7 +70,11 @@ export default function DashboardPage() {
     keepPreviousData: true
   });
 
-  const stats = statsQuery.data?.data?.stats || statsQuery.data?.stats;
+  const stats =
+    statsQuery.data?.data?.stats ||
+    statsQuery.data?.data?.counts ||
+    statsQuery.data?.stats ||
+    statsQuery.data?.counts;
   const issueData = issuesQuery.data?.data || issuesQuery.data; // supports either shape
   const items = issueData?.items || issueData?.issues || [];
   const total = issueData?.total || 0;
