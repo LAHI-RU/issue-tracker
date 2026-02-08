@@ -2,6 +2,10 @@ import { getToken, clearToken } from "./token";
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
 
+function emitAuthExpired() {
+  window.dispatchEvent(new CustomEvent("auth-expired"));
+}
+
 export async function apiFetch(path, { method = "GET", body, signal } = {}) {
   const headers = { "Content-Type": "application/json" };
 
@@ -18,8 +22,11 @@ export async function apiFetch(path, { method = "GET", body, signal } = {}) {
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    // Auto logout on invalid token
-    if (res.status === 401) clearToken();
+    // Centralized auth expiry handling
+    if (res.status === 401) {
+      clearToken();
+      emitAuthExpired();
+    }
 
     const err = new Error(data?.error?.message || "Request failed");
     err.status = res.status;

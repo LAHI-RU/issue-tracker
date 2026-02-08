@@ -2,9 +2,22 @@ import { Outlet, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { Toaster } from "sonner";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toastError } from "@/lib/toast";
 
 export default function AppLayout() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    function onExpired() {
+      toastError("Session expired. Please login again.");
+      navigate("/login");
+    }
+
+    window.addEventListener("auth-expired", onExpired);
+    return () => window.removeEventListener("auth-expired", onExpired);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background">
