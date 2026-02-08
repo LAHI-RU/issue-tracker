@@ -1,157 +1,131 @@
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-const SEVERITIES = ["MINOR", "MAJOR", "CRITICAL"];
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function IssueForm({
-  mode, // "create" | "edit"
-  initialValues,
-  onSubmit,
-  submitting
+  form,
+  mode = "create",
+  submitting = false,
+  onSubmit
 }) {
-  const [serverError, setServerError] = useState("");
+  const {
+    register,
+    setValue,
+    watch,
+    formState: { errors }
+  } = form;
 
-  const defaults = useMemo(
-    () => ({
-      title: "",
-      description: "",
-      priority: "NONE",
-      severity: "NONE",
-      ...(initialValues || {})
-    }),
-    [initialValues]
-  );
-
-  const { register, handleSubmit, setValue, reset, formState, watch } = useForm({
-    defaultValues: defaults
-  });
-
-  // When initialValues arrive (edit mode), update form
-  useEffect(() => {
-    reset(defaults);
-  }, [defaults, reset]);
-
-  const priority = watch("priority");
-  const severity = watch("severity");
-
-  const submit = async (values) => {
-    setServerError("");
-
-    // client-side sanitize: "NONE" -> undefined
-    const payload = {
-      title: values.title.trim(),
-      description: values.description.trim(),
-      priority: values.priority === "NONE" ? undefined : values.priority,
-      severity: values.severity === "NONE" ? undefined : values.severity
-    };
-
-    try {
-      await onSubmit(payload);
-    } catch (err) {
-      setServerError(err.message || "Request failed");
-    }
-  };
+  const priority = watch("priority") || "MEDIUM";
+  const severity = watch("severity") || "MEDIUM";
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>{mode === "edit" ? "Edit Issue" : "Create Issue"}</CardTitle>
-      </CardHeader>
+    <form onSubmit={onSubmit} className="space-y-4">
+      {/* Title */}
+      <div className="glass bento p-5 hover-lift">
+        <label className="text-sm font-medium">Title</label>
+        <Input
+          className="mt-2"
+          placeholder="e.g., Login button not working on Safari"
+          {...register("title")}
+          aria-invalid={!!errors.title}
+        />
+        {errors.title ? (
+          <p className="mt-2 text-xs text-destructive">{errors.title.message}</p>
+        ) : (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Keep it short and descriptive.
+          </p>
+        )}
+      </div>
 
-      <CardContent className="space-y-4">
-        {serverError ? (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
-        ) : null}
+      {/* Description */}
+      <div className="glass bento p-5 hover-lift">
+        <label className="text-sm font-medium">Description</label>
+        <Textarea
+          className="mt-2 min-h-[140px]"
+          placeholder="Describe the issue, steps to reproduce, and expected behavior..."
+          {...register("description")}
+          aria-invalid={!!errors.description}
+        />
+        {errors.description ? (
+          <p className="mt-2 text-xs text-destructive">{errors.description.message}</p>
+        ) : (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Helpful details make issues easier to fix.
+          </p>
+        )}
+      </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit(submit)}>
-          <div className="space-y-1">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="Short, clear issue title"
-              {...register("title", { required: "Title is required", minLength: { value: 3, message: "Min 3 chars" } })}
-            />
-            {formState.errors.title ? (
-              <p className="text-xs text-destructive">{formState.errors.title.message}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              rows={6}
-              placeholder="Describe the issue clearly (steps, expected vs actual, impact)"
-              {...register("description", {
-                required: "Description is required",
-                minLength: { value: 10, message: "Min 10 chars" }
-              })}
-            />
-            {formState.errors.description ? (
-              <p className="text-xs text-destructive">{formState.errors.description.message}</p>
-            ) : null}
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1">
-              <Label>Priority (optional)</Label>
-              <Select
-                value={priority}
-                onValueChange={(v) => setValue("priority", v, { shouldDirty: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
+      {/* Priority + Severity (bento grid) */}
+      <div className="grid gap-4 md:grid-cols-12">
+        <div className="md:col-span-6">
+          <div className="glass bento p-5 hover-lift">
+            <label className="text-sm font-medium">Priority</label>
+            <div className="mt-2">
+              <Select value={priority} onValueChange={(v) => setValue("priority", v)}>
+                <SelectTrigger aria-label="Select priority">
+                  <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE">None</SelectItem>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Priority reflects business urgency.
+            </p>
+          </div>
+        </div>
 
-            <div className="space-y-1">
-              <Label>Severity (optional)</Label>
-              <Select
-                value={severity}
-                onValueChange={(v) => setValue("severity", v, { shouldDirty: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select severity" />
+        <div className="md:col-span-6">
+          <div className="glass bento p-5 hover-lift">
+            <label className="text-sm font-medium">Severity</label>
+            <div className="mt-2">
+              <Select value={severity} onValueChange={(v) => setValue("severity", v)}>
+                <SelectTrigger aria-label="Select severity">
+                  <SelectValue placeholder="Severity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE">None</SelectItem>
-                  {SEVERITIES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Severity reflects impact to users/system.
+            </p>
           </div>
+        </div>
+      </div>
 
-          <div className="flex items-center justify-end gap-2">
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Saving..." : mode === "edit" ? "Save changes" : "Create issue"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      {/* Actions */}
+      <div className="glass bento p-5 hover-lift flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          {mode === "edit"
+            ? "Update the issue fields and save changes."
+            : "Create a new issue and track it on the dashboard."}
+        </p>
+
+        <Button type="submit" disabled={submitting} className="hover-lift">
+          {submitting
+            ? mode === "edit"
+              ? "Saving..."
+              : "Creating..."
+            : mode === "edit"
+            ? "Save changes"
+            : "Create issue"}
+        </Button>
+      </div>
+    </form>
   );
 }

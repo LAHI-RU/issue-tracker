@@ -1,269 +1,320 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import IssueListTable from "@/components/IssueListTable";
-import IssueListCards from "@/components/IssueListCards";
-import PaginationBar from "@/components/PaginationBar";
+import StatusChip from "@/components/StatusChip";
+import PriorityChip from "@/components/PriorityChip";
 
-import { fetchIssueStats, fetchIssuesList } from "@/lib/issues";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { fetchIssueStats, fetchIssues } from "@/lib/issues";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
-function StatCard({ label, value, loading }) {
-  return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <div className="mt-2">
-          {loading ? (
-            <Skeleton className="h-8 w-14" />
-          ) : (
-            <p className="text-2xl font-semibold">{value}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ListSkeleton() {
-  return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="space-y-3">
-        <Skeleton className="h-5 w-1/2" />
-        <Skeleton className="h-5 w-2/3" />
-        <Skeleton className="h-5 w-3/5" />
-        <Skeleton className="h-5 w-1/2" />
-      </div>
-    </div>
-  );
+function formatDateTime(iso) {
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return "—";
+  }
 }
 
 export default function DashboardPage() {
   // UI state
   const [q, setQ] = useState("");
-  const debouncedQ = useDebouncedValue(q, 400);
-
   const [status, setStatus] = useState("ALL");
   const [priority, setPriority] = useState("ALL");
   const [severity, setSeverity] = useState("ALL");
-
+  const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  // Reset to page 1 only when debounced search commits
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQ]);
+  // Debounced query for search (already built in your previous step)
+  const debouncedQ = useDebouncedValue(q, 350);
 
-  // Stats
+  // Reset to page 1 when query or filters change
+  // (keeps pagination correct)
+  useMemo(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQ, status, priority, severity, sort]);
+
+  // Stats query
   const statsQuery = useQuery({
     queryKey: ["issueStats"],
-    queryFn: ({ signal }) => fetchIssueStats({ signal }),
+    queryFn: ({ signal }) => fetchIssueStats({ signal })
   });
 
-  // List params (convert ALL to undefined)
-  const listParams = useMemo(
-    () => ({
-      q: debouncedQ.trim() || undefined,
-      status: status === "ALL" ? undefined : status,
-      priority: priority === "ALL" ? undefined : priority,
-      severity: severity === "ALL" ? undefined : severity,
-      page,
-      limit,
-      sort: "newest",
-    }),
-    [debouncedQ, status, priority, severity, page],
-  );
-
-  // Issues list
-  const listQuery = useQuery({
-    queryKey: ["issues", listParams],
-    queryFn: ({ signal }) => fetchIssuesList({ ...listParams, signal }),
-    keepPreviousData: true,
+  // List query with cancellation
+  const issuesQuery = useQuery({
+    queryKey: ["issues", { q: debouncedQ, status, priority, severity, sort, page, limit }],
+    queryFn: ({ signal }) =>
+      fetchIssues({
+        q: debouncedQ,
+        status: status === "ALL" ? undefined : status,
+        priority: priority === "ALL" ? undefined : priority,
+        severity: severity === "ALL" ? undefined : severity,
+        sort,
+        page,
+        limit,
+        signal
+      }),
+    keepPreviousData: true
   });
 
-  const counts = statsQuery.data?.data?.counts || {
-    OPEN: 0,
-    IN_PROGRESS: 0,
-    RESOLVED: 0,
-    CLOSED: 0,
-  };
+  const stats = statsQuery.data?.data?.stats || statsQuery.data?.stats;
+  const issueData = issuesQuery.data?.data || issuesQuery.data; // supports either shape
+  const items = issueData?.items || issueData?.issues || [];
+  const total = issueData?.total || 0;
+  const totalPages = issueData?.totalPages || Math.max(1, Math.ceil(total / limit));
 
-  const items = listQuery.data?.data?.items || [];
-  const meta = listQuery.data?.meta || { page: 1, totalPages: 1 };
+  const showingText = useMemo(() => {
+    if (issuesQuery.isLoading) return "Loading…";
+    return `Showing ${items.length} item(s)`;
+  }, [issuesQuery.isLoading, items.length]);
 
-  // Reset to page 1 for filters (immediate)
-  function onFilterChange(fn) {
-    fn();
-    setPage(1);
-  }
+  const searchingText = useMemo(() => {
+    if (!q.trim()) return "—";
+    return q.trim();
+  }, [q]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-
-      {/* Stats cards */}
-      {statsQuery.isError ? (
-        <div className="rounded-xl border bg-card p-4 text-sm text-destructive">
-          Failed to load stats: {statsQuery.error?.message}
+    <div className="space-y-6">
+      {/* Title row */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track issues, update status, and keep work moving.
+          </p>
         </div>
-      ) : null}
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          label="Open"
-          value={counts.OPEN}
-          loading={statsQuery.isLoading}
-        />
-        <StatCard
-          label="In Progress"
-          value={counts.IN_PROGRESS}
-          loading={statsQuery.isLoading}
-        />
-        <StatCard
-          label="Resolved"
-          value={counts.RESOLVED}
-          loading={statsQuery.isLoading}
-        />
-        <StatCard
-          label="Closed"
-          value={counts.CLOSED}
-          loading={statsQuery.isLoading}
-        />
+        <Link to="/issues/new">
+          <Button className="hover-lift">Create issue</Button>
+        </Link>
       </div>
 
-      <Separator />
+      {/* Stats Bento Grid */}
+      <div className="grid gap-4 md:grid-cols-12">
+        <div className="md:col-span-3">
+          <div className="glass bento hover-lift p-5">
+            <p className="text-sm text-muted-foreground">Open</p>
+            <p className="mt-2 text-3xl font-semibold">
+              {statsQuery.isLoading ? "—" : (stats?.OPEN ?? 0)}
+            </p>
+          </div>
+        </div>
 
-      {/* Controls + List */}
-      <div className="rounded-xl border bg-card p-4 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <Input
-              placeholder="Search issues by title/description..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <div className="mt-1 text-xs text-muted-foreground">
-              Searching:{" "}
-              <span className="font-medium text-foreground">
-                {debouncedQ || "—"}
-              </span>
+        <div className="md:col-span-3">
+          <div className="glass bento hover-lift p-5">
+            <p className="text-sm text-muted-foreground">In Progress</p>
+            <p className="mt-2 text-3xl font-semibold">
+              {statsQuery.isLoading ? "—" : (stats?.IN_PROGRESS ?? 0)}
+            </p>
+          </div>
+        </div>
+
+        <div className="md:col-span-3">
+          <div className="glass bento hover-lift p-5">
+            <p className="text-sm text-muted-foreground">Resolved</p>
+            <p className="mt-2 text-3xl font-semibold">
+              {statsQuery.isLoading ? "—" : (stats?.RESOLVED ?? 0)}
+            </p>
+          </div>
+        </div>
+
+        <div className="md:col-span-3">
+          <div className="glass bento hover-lift p-5">
+            <p className="text-sm text-muted-foreground">Closed</p>
+            <p className="mt-2 text-3xl font-semibold">
+              {statsQuery.isLoading ? "—" : (stats?.CLOSED ?? 0)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main panel with AI ring (visual only) */}
+      <div className="ai-ring">
+        <div className="glass bento p-4">
+          {/* Controls */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex-1">
+              <Input
+                aria-label="Search issues"
+                placeholder="Search issues by title/description..."
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+              <div className="mt-2 text-xs text-muted-foreground">
+                Searching: <span className="font-medium text-foreground/80">{searchingText}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger aria-label="Filter by status" className="w-[160px]">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Status</SelectItem>
+                  <SelectItem value="OPEN">Open</SelectItem>
+                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                  <SelectItem value="RESOLVED">Resolved</SelectItem>
+                  <SelectItem value="CLOSED">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger aria-label="Filter by priority" className="w-[160px]">
+                  <SelectValue placeholder="All Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Priority</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={severity} onValueChange={setSeverity}>
+                <SelectTrigger aria-label="Filter by severity" className="w-[160px]">
+                  <SelectValue placeholder="All Severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Severity</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sort} onValueChange={setSort}>
+                <SelectTrigger aria-label="Sort issues" className="w-[160px]">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <Select
-            value={status}
-            onValueChange={(v) => onFilterChange(() => setStatus(v))}
-          >
-            <SelectTrigger aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Status</SelectItem>
-              <SelectItem value="OPEN">Open</SelectItem>
-              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-              <SelectItem value="RESOLVED">Resolved</SelectItem>
-              <SelectItem value="CLOSED">Closed</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="mt-4 text-sm text-muted-foreground">{showingText}</div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-2">
-            <Select
-              value={priority}
-              onValueChange={(v) => onFilterChange(() => setPriority(v))}
-            >
-              <SelectTrigger aria-label="Filter by priority">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Priority</SelectItem>
-                <SelectItem value="LOW">Low</SelectItem>
-                <SelectItem value="MEDIUM">Medium</SelectItem>
-                <SelectItem value="HIGH">High</SelectItem>
-                <SelectItem value="URGENT">Urgent</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={severity}
-              onValueChange={(v) => onFilterChange(() => setSeverity(v))}
-            >
-              <SelectTrigger aria-label="Filter by severity">
-                <SelectValue placeholder="Severity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Severity</SelectItem>
-                <SelectItem value="MINOR">Minor</SelectItem>
-                <SelectItem value="MAJOR">Major</SelectItem>
-                <SelectItem value="CRITICAL">Critical</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Table / List */}
+          <div className="mt-3 overflow-hidden rounded-2xl border bg-background/40">
+            {issuesQuery.isLoading ? (
+              <div className="p-4 space-y-3">
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : issuesQuery.isError ? (
+              <div className="p-6">
+                <p className="text-sm font-medium text-destructive">Failed to load issues</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {issuesQuery.error?.message}
+                </p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-sm font-medium">No issues found</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try changing filters, or create a new issue to get started.
+                </p>
+                <div className="mt-4">
+                  <Link to="/issues/new">
+                    <Button className="hover-lift">Create issue</Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-black/5 dark:bg-white/5">
+                    <tr className="text-muted-foreground">
+                      <th className="px-4 py-3 font-medium">Title</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium">Priority</th>
+                      <th className="px-4 py-3 font-medium">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it) => (
+                      <tr
+                        key={it._id || it.id}
+                        className="border-t hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <td className="px-4 py-3">
+                          <Link
+                            to={`/issues/${it._id || it.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {it.title}
+                          </Link>
+                          {it.description ? (
+                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                              {it.description}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusChip status={it.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <PriorityChip priority={it.priority} />
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {formatDateTime(it.createdAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="mt-4">
-          {listQuery.isError ? (
-            <div className="rounded-lg border p-3 text-sm text-destructive">
-              Failed to load issues: {listQuery.error?.message}
+          {/* Pagination */}
+          {!issuesQuery.isLoading && !issuesQuery.isError && items.length > 0 ? (
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Page <span className="font-medium text-foreground/80">{page}</span> of{" "}
+                <span className="font-medium text-foreground/80">{totalPages}</span>
+              </p>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  disabled={page <= 1 || issuesQuery.isFetching}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={page >= totalPages || issuesQuery.isFetching}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           ) : null}
 
-          {listQuery.isLoading ? (
-            <ListSkeleton />
-          ) : items.length === 0 ? (
-            <div className="rounded-xl border bg-card p-6 text-center">
-              <p className="text-sm font-medium">No issues found</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Try changing filters, or create a new issue to get started.
-              </p>
-              <div className="mt-4">
-                <a
-                  href="/issues/new"
-                  className="inline-flex items-center justify-center rounded-md bg-black px-3 py-2 text-sm font-medium text-white"
-                >
-                  Create issue
-                </a>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="mb-2 flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Showing{" "}
-                  <span className="font-medium text-foreground">
-                    {items.length}
-                  </span>{" "}
-                  item(s)
-                </div>
-                {listQuery.isFetching ? (
-                  <div className="text-sm text-muted-foreground">Updating…</div>
-                ) : null}
-              </div>
-
-              <IssueListTable items={items} />
-              <IssueListCards items={items} />
-
-              <PaginationBar
-                page={meta.page}
-                totalPages={meta.totalPages}
-                disabled={listQuery.isFetching}
-                onPrev={() => setPage((p) => Math.max(1, p - 1))}
-                onNext={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
-              />
-            </>
-          )}
+          {issuesQuery.isFetching && !issuesQuery.isLoading ? (
+            <div className="mt-3 text-xs text-muted-foreground">Updating…</div>
+          ) : null}
         </div>
       </div>
     </div>

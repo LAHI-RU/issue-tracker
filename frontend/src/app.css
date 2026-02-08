@@ -5,36 +5,52 @@
 @custom-variant dark (&:is(.dark *));
 
 /* App base */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
+/* ------------------------------
+   Design tokens (shadcn base)
+-------------------------------- */
 :root {
   color-scheme: light;
   --radius: 0.625rem;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
+
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
+
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
+
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
+
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+
   --destructive: oklch(0.577 0.245 27.325);
+
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -43,6 +59,23 @@ html, body, #root {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ------------------------------
+     “Next-level UI” additions
+     (safe + subtle)
+  -------------------------------- */
+  --glass-bg: color-mix(in oklch, var(--background) 72%, transparent);
+  --glass-bg-strong: color-mix(in oklch, var(--background) 86%, transparent);
+  --glass-border: color-mix(in oklch, var(--foreground) 10%, transparent);
+  --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.06);
+
+  /* AI presence gradient (used by .ai-ring) */
+  --ai-grad: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.95),
+    rgba(236, 72, 153, 0.9),
+    rgba(16, 185, 129, 0.9)
+  );
 }
 
 @theme inline {
@@ -53,29 +86,40 @@ html, body, #root {
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -87,29 +131,41 @@ html, body, #root {
 }
 
 .dark {
+  color-scheme: dark;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
+
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
+
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
+
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
+
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
+
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
+
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+
   --destructive: oklch(0.704 0.191 22.216);
+
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -118,25 +174,125 @@ html, body, #root {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Dark glass tuning */
+  --glass-bg: color-mix(in oklch, var(--background) 75%, transparent);
+  --glass-bg-strong: color-mix(in oklch, var(--background) 88%, transparent);
+  --glass-border: color-mix(in oklch, var(--foreground) 16%, transparent);
 }
 
-/* Accessibility: visible focus ring */
+/* ------------------------------
+   Modern background (performance-safe)
+-------------------------------- */
+body {
+  /* subtle layered gradients (light) */
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(99, 102, 241, 0.10), transparent 60%),
+    radial-gradient(900px 600px at 90% 20%, rgba(236, 72, 153, 0.08), transparent 60%),
+    radial-gradient(1000px 700px at 50% 100%, rgba(16, 185, 129, 0.08), transparent 55%),
+    var(--background);
+}
+
+.dark body {
+  /* toned down for dark mode */
+  background:
+    radial-gradient(1000px 600px at 10% 10%, rgba(99, 102, 241, 0.14), transparent 60%),
+    radial-gradient(900px 600px at 90% 20%, rgba(236, 72, 153, 0.12), transparent 60%),
+    radial-gradient(1000px 700px at 50% 100%, rgba(16, 185, 129, 0.10), transparent 55%),
+    var(--background);
+}
+
+/* ------------------------------
+   Utilities: glass + bento + AI ring
+-------------------------------- */
+
+/* Glass surface utility */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Strong glass for header/nav */
+.glass-strong {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Bento rounding (consistent “modern cards”) */
+.bento {
+  border-radius: 1.25rem; /* 2xl */
+}
+
+/* AI presence gradient ring (optional, can use around a section) */
+.ai-ring {
+  position: relative;
+  border-radius: 1.25rem;
+}
+.ai-ring::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--ai-grad);
+
+  /* Make it a ring (mask technique) */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Micro-interaction helpers (no JS needed) */
+.hover-lift {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.10);
+}
+
+/* ------------------------------
+   Accessibility + motion safety
+-------------------------------- */
+
+/* Visible focus ring (WCAG-friendly) */
 *:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid color-mix(in oklch, var(--foreground) 70%, transparent);
   outline-offset: 2px;
 }
 
-/* Smooth anchor scroll (nice for skip links) */
+/* Smooth anchor scroll (skip links etc.) */
 html {
   scroll-behavior: smooth;
 }
 
+/* Reduce motion if user requests it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
+/* ------------------------------
+   Tailwind/shadcn base layer
+-------------------------------- */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
 }

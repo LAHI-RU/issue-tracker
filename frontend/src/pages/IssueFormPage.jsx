@@ -1,85 +1,144 @@
-import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import IssueForm from "@/components/IssueForm";
-import { fetchIssueById, createIssue, updateIssue } from "@/lib/issues";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+
+import { issueCreateSchema, issueUpdateSchema } from "@/lib/validators";
+import { createIssue, fetchIssueById, updateIssue } from "@/lib/issues";
 import { toastSuccess, toastError } from "@/lib/toast";
 
 export default function IssueFormPage() {
-  const { id } = useParams();
-  const mode = id ? "edit" : "create";
+  const { id } = useParams(); // present = edit
+  const isEdit = !!id;
   const navigate = useNavigate();
   const qc = useQueryClient();
 
   const issueQuery = useQuery({
     queryKey: ["issue", id],
-    enabled: !!id,
-    queryFn: ({ signal }) => fetchIssueById(id, { signal })
+    queryFn: ({ signal }) => fetchIssueById(id, { signal }),
+    enabled: isEdit
   });
 
-  const initialValues = useMemo(() => {
-    const issue = issueQuery.data?.data?.issue;
-    if (!issue) return null;
+  const issue = issueQuery.data?.data?.issue;
 
-    return {
-      title: issue.title || "",
-      description: issue.description || "",
-      priority: issue.priority || "NONE",
-      severity: issue.severity || "NONE"
-    };
-  }, [issueQuery.data]);
+  const form = useForm({
+    resolver: zodResolver(isEdit ? issueUpdateSchema : issueCreateSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "MEDIUM",
+      severity: "MEDIUM"
+    },
+    values: isEdit && issue
+      ? {
+          title: issue.title || "",
+          description: issue.description || "",
+          priority: issue.priority || "MEDIUM",
+          severity: issue.severity || "MEDIUM"
+        }
+      : undefined
+  });
 
-  const createMut = useMutation({
+  const createMutation = useMutation({
     mutationFn: (payload) => createIssue(payload),
     onSuccess: async (res) => {
-      const created = res.data.issue;
       toastSuccess("Issue created");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["issues"] }),
         qc.invalidateQueries({ queryKey: ["issueStats"] })
       ]);
-      navigate(`/issues/${created._id}`);
+      const newId = res?.data?.issue?._id;
+      navigate(newId ? `/issues/${newId}` : "/");
     },
     onError: (err) => toastError(err.message)
   });
 
-  const updateMut = useMutation({
+  const updateMutation = useMutation({
     mutationFn: (payload) => updateIssue(id, payload),
-    onSuccess: async (res) => {
-      const updated = res.data.issue;
+    onSuccess: async () => {
       toastSuccess("Issue updated");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["issues"] }),
         qc.invalidateQueries({ queryKey: ["issueStats"] }),
         qc.invalidateQueries({ queryKey: ["issue", id] })
       ]);
-      navigate(`/issues/${updated._id}`);
+      navigate(`/issues/${id}`);
     },
     onError: (err) => toastError(err.message)
   });
 
-  // Loading in edit mode
-  if (mode === "edit" && issueQuery.isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading issue...</div>;
+  const submitting = createMutation.isPending || updateMutation.isPending;
+
+  function onSubmit(values) {
+    if (isEdit) updateMutation.mutate(values);
+    else createMutation.mutate(values);
   }
 
-  if (mode === "edit" && issueQuery.isError) {
+  if (isEdit && issueQuery.isLoading) {
     return (
-      <div className="rounded-xl border bg-card p-4 text-sm text-destructive">
-        Failed to load issue: {issueQuery.error?.message}
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-1/3" />
+        <Skeleton className="h-5 w-1/2" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
 
-  const submitting = createMut.isPending || updateMut.isPending;
+  if (isEdit && issueQuery.isError) {
+    return (
+      <div className="glass bento p-5">
+        <p className="text-sm font-medium text-destructive">Failed to load issue</p>
+        <p className="mt-1 text-sm text-muted-foreground">{issueQuery.error?.message}</p>
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => navigate("/")}>
+            Back to dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <IssueForm
-      mode={mode}
-      initialValues={initialValues}
-      submitting={submitting}
-      onSubmit={(payload) => (mode === "edit" ? updateMut.mutateAsync(payload) : createMut.mutateAsync(payload))}
-    />
+    <div className="space-y-5">
+      {/* Breadcrumb */}
+      <div className="text-sm text-muted-foreground">
+        <Link className="underline" to="/">
+          Dashboard
+        </Link>{" "}
+        / {isEdit ? "Edit Issue" : "New Issue"}
+      </div>
+
+      {/* Header */}
+      <div className="glass bento p-5 hover-lift flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {isEdit ? "Edit issue" : "Create a new issue"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isEdit
+              ? "Update details and keep the team aligned."
+              : "Capture problems clearly so they’re easy to fix."}
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(isEdit ? `/issues/${id}` : "/")}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+
+      {/* Form */}
+      <IssueForm
+        form={form}
+        mode={isEdit ? "edit" : "create"}
+        submitting={submitting}
+        onSubmit={form.handleSubmit(onSubmit)}
+      />
+    </div>
   );
 }

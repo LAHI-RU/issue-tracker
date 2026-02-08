@@ -43,3 +43,28 @@ export function deleteIssue(id) {
   return apiFetch(`/issues/${id}`, { method: "DELETE" });
 }
 
+export async function fetchIssues(params) {
+  // If you already have a function, call it here.
+  // Otherwise implement minimal list call:
+  const qs = new URLSearchParams();
+
+  if (params?.q) qs.set("q", params.q);
+  if (params?.status) qs.set("status", params.status);
+  if (params?.priority) qs.set("priority", params.priority);
+  if (params?.severity) qs.set("severity", params.severity);
+  if (params?.sort) qs.set("sort", params.sort);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+
+  // support AbortController cancellation via apiFetch
+  return listIssues(`?${qs.toString()}`, params?.signal);
+}
+
+// --- helper using your existing apiFetch ---
+// If you already have apiFetch imported and functions defined, keep them.
+
+
+async function listIssues(queryString, signal) {
+  return apiFetch(`/issues${queryString}`, { signal });
+}
+

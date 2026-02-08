@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import StatusChip from "@/components/StatusChip";
@@ -25,7 +24,6 @@ export default function IssueDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  // one dialog for status, one for delete
   const [confirmStatus, setConfirmStatus] = useState({ open: false, status: null });
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -102,9 +100,10 @@ export default function IssueDetailPage() {
 
   if (issueQuery.isError) {
     return (
-      <div className="rounded-xl border bg-card p-4 text-sm text-destructive">
-        Failed to load issue: {issueQuery.error?.message}
-        <div className="mt-3">
+      <div className="glass bento p-5">
+        <p className="text-sm font-medium text-destructive">Failed to load issue</p>
+        <p className="mt-1 text-sm text-muted-foreground">{issueQuery.error?.message}</p>
+        <div className="mt-4">
           <Button variant="outline" size="sm" onClick={() => navigate("/")}>
             Back to dashboard
           </Button>
@@ -115,9 +114,10 @@ export default function IssueDetailPage() {
 
   if (!issue) {
     return (
-      <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-        Issue not found.
-        <div className="mt-3">
+      <div className="glass bento p-5">
+        <p className="text-sm font-medium">Issue not found</p>
+        <p className="mt-1 text-sm text-muted-foreground">The issue may have been deleted.</p>
+        <div className="mt-4">
           <Button variant="outline" size="sm" onClick={() => navigate("/")}>
             Back to dashboard
           </Button>
@@ -127,83 +127,95 @@ export default function IssueDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 ">
-        <div>
-          <div className="text-sm text-muted-foreground">
-            <Link className="underline" to="/">Dashboard</Link> / Issue
+    <div className="space-y-5">
+      {/* Top header bento */}
+      <div className="glass bento p-5 hover-lift">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-[240px]">
+            <div className="text-sm text-muted-foreground">
+              <Link className="underline" to="/">
+                Dashboard
+              </Link>{" "}
+              / Issue
+            </div>
+
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{issue.title}</h1>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <StatusChip status={issue.status} />
+              <PriorityChip priority={issue.priority} />
+            </div>
+
+            <div className="mt-3 text-sm text-muted-foreground">
+              Created: {formatDateTime(issue.createdAt)}
+              {issue.updatedAt ? ` • Updated: ${formatDateTime(issue.updatedAt)}` : null}
+            </div>
           </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{issue.title}</h1>
 
-          <div className="mt-2 flex flex-wrap gap-2">
-            <StatusChip status={issue.status} />
-            <PriorityChip priority={issue.priority} />
+          {/* Action bar */}
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
+            <Button variant="outline" onClick={copyLink}>
+              Copy link
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate(`/issues/${id}/edit`)}>
+              Edit
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={!canResolve || statusMutation.isPending}
+              onClick={() => setConfirmStatus({ open: true, status: "RESOLVED" })}
+            >
+              Mark Resolved
+            </Button>
+
+            <Button
+              variant="destructive"
+              disabled={!canClose || statusMutation.isPending}
+              onClick={() => setConfirmStatus({ open: true, status: "CLOSED" })}
+            >
+              Close
+            </Button>
+
+            <Button
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => setConfirmDelete(true)}
+            >
+              Delete
+            </Button>
           </div>
-
-          <div className="mt-2 text-sm text-muted-foreground">
-            Created: {formatDateTime(issue.createdAt)}
-            {issue.updatedAt ? ` • Updated: ${formatDateTime(issue.updatedAt)}` : null}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
-          <Button variant="outline" onClick={copyLink}>
-            Copy link
-          </Button>
-
-          <Button variant="outline" onClick={() => navigate(`/issues/${id}/edit`)}>
-            Edit
-          </Button>
-
-          <Button
-            variant="outline"
-            disabled={!canResolve || statusMutation.isPending}
-            onClick={() => setConfirmStatus({ open: true, status: "RESOLVED" })}
-          >
-            Mark Resolved
-          </Button>
-
-          <Button
-            variant="destructive"
-            disabled={!canClose || statusMutation.isPending}
-            onClick={() => setConfirmStatus({ open: true, status: "CLOSED" })}
-          >
-            Close
-          </Button>
-
-          <Button
-            variant="destructive"
-            disabled={deleteMutation.isPending}
-            onClick={() => setConfirmDelete(true)}
-          >
-            Delete
-          </Button>
         </div>
       </div>
 
-      <Card className="shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          <div>
+      {/* Content bento grid */}
+      <div className="grid gap-4 md:grid-cols-12">
+        {/* Description */}
+        <div className="md:col-span-8">
+          <div className="glass bento p-5 hover-lift">
             <p className="text-sm font-medium">Description</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+            <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
               {issue.description}
             </p>
           </div>
+        </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground">Severity</p>
-              <p className="mt-1 text-sm font-medium">{issue.severity || "—"}</p>
-            </div>
-            <div className="rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground">Priority</p>
-              <p className="mt-1 text-sm font-medium">{issue.priority || "—"}</p>
-            </div>
+        {/* Meta */}
+        <div className="md:col-span-4 space-y-4">
+          <div className="glass bento p-5 hover-lift">
+            <p className="text-xs text-muted-foreground">Severity</p>
+            <p className="mt-2 text-sm font-semibold">{issue.severity || "—"}</p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Status confirm */}
+          <div className="glass bento p-5 hover-lift">
+            <p className="text-xs text-muted-foreground">Priority</p>
+            <p className="mt-2 text-sm font-semibold">{issue.priority || "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Confirm dialogs (unchanged logic) */}
       <ConfirmDialog
         open={confirmStatus.open}
         title={confirmTitle}
@@ -214,7 +226,6 @@ export default function IssueDetailPage() {
         onConfirm={() => statusMutation.mutate({ status: confirmStatus.status })}
       />
 
-      {/* Delete confirm */}
       <ConfirmDialog
         open={confirmDelete}
         title="Delete this issue?"
