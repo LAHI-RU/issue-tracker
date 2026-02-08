@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { Toaster } from "sonner";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { toastError } from "@/lib/toast";
 
 export default function AppLayout() {
