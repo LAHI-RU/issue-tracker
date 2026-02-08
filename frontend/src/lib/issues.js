@@ -19,3 +19,14 @@ export function fetchIssuesList({ q, status, priority, severity, page = 1, limit
   const qs = params.toString();
   return apiFetch(`/issues?${qs}`, { signal });
 }
+
+export function fetchIssueById(id, { signal } = {}) {
+  return apiFetch(`/issues/${id}`, { signal });
+}
+
+export function updateIssueStatus(id, status) {
+  return apiFetch(`/issues/${id}/status`, {
+    method: "PATCH",
+    body: { status }
+  });
+}
