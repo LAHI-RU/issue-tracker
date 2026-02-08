@@ -39,3 +39,7 @@ export function updateIssue(id, payload) {
   return apiFetch(`/issues/${id}`, { method: "PATCH", body: payload });
 }
 
+export function deleteIssue(id) {
+  return apiFetch(`/issues/${id}`, { method: "DELETE" });
+}
+

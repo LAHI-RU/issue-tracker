@@ -9,7 +9,8 @@ import StatusChip from "@/components/StatusChip";
 import PriorityChip from "@/components/PriorityChip";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-import { fetchIssueById, updateIssueStatus } from "@/lib/issues";
+import { fetchIssueById, updateIssueStatus, deleteIssue } from "@/lib/issues";
+import { toastSuccess, toastError } from "@/lib/toast";
 
 function formatDateTime(iso) {
   try {
@@ -24,7 +25,9 @@ export default function IssueDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const [confirm, setConfirm] = useState({ open: false, status: null });
+  // one dialog for status, one for delete
+  const [confirmStatus, setConfirmStatus] = useState({ open: false, status: null });
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const issueQuery = useQuery({
     queryKey: ["issue", id],
@@ -36,30 +39,56 @@ export default function IssueDetailPage() {
   const canResolve = issue?.status && !["RESOLVED", "CLOSED"].includes(issue.status);
   const canClose = issue?.status && issue.status !== "CLOSED";
 
-  const mutation = useMutation({
+  const statusMutation = useMutation({
     mutationFn: ({ status }) => updateIssueStatus(id, status),
     onSuccess: async () => {
-      // Refresh detail + list + stats
+      toastSuccess("Status updated");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["issue", id] }),
         qc.invalidateQueries({ queryKey: ["issues"] }),
         qc.invalidateQueries({ queryKey: ["issueStats"] })
       ]);
-      setConfirm({ open: false, status: null });
-    }
+      setConfirmStatus({ open: false, status: null });
+    },
+    onError: (err) => toastError(err.message)
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteIssue(id),
+    onSuccess: async () => {
+      toastSuccess("Issue deleted");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["issues"] }),
+        qc.invalidateQueries({ queryKey: ["issueStats"] })
+      ]);
+      setConfirmDelete(false);
+      navigate("/");
+    },
+    onError: (err) => toastError(err.message)
   });
 
   const confirmTitle = useMemo(() => {
-    if (confirm.status === "RESOLVED") return "Mark issue as Resolved?";
-    if (confirm.status === "CLOSED") return "Mark issue as Closed?";
+    if (confirmStatus.status === "RESOLVED") return "Mark issue as Resolved?";
+    if (confirmStatus.status === "CLOSED") return "Mark issue as Closed?";
     return "Confirm";
-  }, [confirm.status]);
+  }, [confirmStatus.status]);
 
   const confirmDesc = useMemo(() => {
-    if (confirm.status === "RESOLVED") return "This will set status to RESOLVED. You can still close it later.";
-    if (confirm.status === "CLOSED") return "Closing is final. Closed issues cannot be reopened.";
+    if (confirmStatus.status === "RESOLVED")
+      return "This will set status to RESOLVED. You can still close it later.";
+    if (confirmStatus.status === "CLOSED")
+      return "Closing is final. Closed issues cannot be reopened.";
     return "";
-  }, [confirm.status]);
+  }, [confirmStatus.status]);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toastSuccess("Link copied");
+    } catch {
+      toastError("Failed to copy link");
+    }
+  }
 
   if (issueQuery.isLoading) {
     return (
@@ -75,6 +104,11 @@ export default function IssueDetailPage() {
     return (
       <div className="rounded-xl border bg-card p-4 text-sm text-destructive">
         Failed to load issue: {issueQuery.error?.message}
+        <div className="mt-3">
+          <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+            Back to dashboard
+          </Button>
+        </div>
       </div>
     );
   }
@@ -83,6 +117,11 @@ export default function IssueDetailPage() {
     return (
       <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
         Issue not found.
+        <div className="mt-3">
+          <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+            Back to dashboard
+          </Button>
+        </div>
       </div>
     );
   }
@@ -107,25 +146,37 @@ export default function IssueDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={copyLink}>
+            Copy link
+          </Button>
+
           <Button variant="outline" onClick={() => navigate(`/issues/${id}/edit`)}>
             Edit
           </Button>
 
           <Button
             variant="outline"
-            disabled={!canResolve || mutation.isPending}
-            onClick={() => setConfirm({ open: true, status: "RESOLVED" })}
+            disabled={!canResolve || statusMutation.isPending}
+            onClick={() => setConfirmStatus({ open: true, status: "RESOLVED" })}
           >
             Mark Resolved
           </Button>
 
           <Button
             variant="destructive"
-            disabled={!canClose || mutation.isPending}
-            onClick={() => setConfirm({ open: true, status: "CLOSED" })}
+            disabled={!canClose || statusMutation.isPending}
+            onClick={() => setConfirmStatus({ open: true, status: "CLOSED" })}
           >
             Close
+          </Button>
+
+          <Button
+            variant="destructive"
+            disabled={deleteMutation.isPending}
+            onClick={() => setConfirmDelete(true)}
+          >
+            Delete
           </Button>
         </div>
       </div>
@@ -152,14 +203,26 @@ export default function IssueDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Status confirm */}
       <ConfirmDialog
-        open={confirm.open}
+        open={confirmStatus.open}
         title={confirmTitle}
         description={confirmDesc}
-        confirmText={confirm.status === "CLOSED" ? "Yes, close it" : "Yes, mark resolved"}
-        loading={mutation.isPending}
-        onCancel={() => setConfirm({ open: false, status: null })}
-        onConfirm={() => mutation.mutate({ status: confirm.status })}
+        confirmText={confirmStatus.status === "CLOSED" ? "Yes, close it" : "Yes, mark resolved"}
+        loading={statusMutation.isPending}
+        onCancel={() => setConfirmStatus({ open: false, status: null })}
+        onConfirm={() => statusMutation.mutate({ status: confirmStatus.status })}
+      />
+
+      {/* Delete confirm */}
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete this issue?"
+        description="This action cannot be undone."
+        confirmText="Yes, delete"
+        loading={deleteMutation.isPending}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => deleteMutation.mutate()}
       />
     </div>
   );
