@@ -153,9 +153,6 @@ export default function DashboardPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-              <div className="mt-2 text-xs text-muted-foreground">
-                Searching: <span className="font-medium text-foreground/80">{searchingText}</span>
-              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
