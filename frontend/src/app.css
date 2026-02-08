@@ -120,6 +120,18 @@ html, body, #root {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Accessibility: visible focus ring */
+*:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Smooth anchor scroll (nice for skip links) */
+html {
+  scroll-behavior: smooth;
+}
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

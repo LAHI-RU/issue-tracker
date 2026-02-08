@@ -4,7 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
 import IssueListTable from "@/components/IssueListTable";
@@ -20,7 +26,11 @@ function StatCard({ label, value, loading }) {
       <CardContent className="p-4">
         <p className="text-sm text-muted-foreground">{label}</p>
         <div className="mt-2">
-          {loading ? <Skeleton className="h-8 w-14" /> : <p className="text-2xl font-semibold">{value}</p>}
+          {loading ? (
+            <Skeleton className="h-8 w-14" />
+          ) : (
+            <p className="text-2xl font-semibold">{value}</p>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -60,7 +70,7 @@ export default function DashboardPage() {
   // Stats
   const statsQuery = useQuery({
     queryKey: ["issueStats"],
-    queryFn: ({ signal }) => fetchIssueStats({ signal })
+    queryFn: ({ signal }) => fetchIssueStats({ signal }),
   });
 
   // List params (convert ALL to undefined)
@@ -72,19 +82,24 @@ export default function DashboardPage() {
       severity: severity === "ALL" ? undefined : severity,
       page,
       limit,
-      sort: "newest"
+      sort: "newest",
     }),
-    [debouncedQ, status, priority, severity, page]
+    [debouncedQ, status, priority, severity, page],
   );
 
   // Issues list
   const listQuery = useQuery({
     queryKey: ["issues", listParams],
     queryFn: ({ signal }) => fetchIssuesList({ ...listParams, signal }),
-    keepPreviousData: true
+    keepPreviousData: true,
   });
 
-  const counts = statsQuery.data?.data?.counts || { OPEN: 0, IN_PROGRESS: 0, RESOLVED: 0, CLOSED: 0 };
+  const counts = statsQuery.data?.data?.counts || {
+    OPEN: 0,
+    IN_PROGRESS: 0,
+    RESOLVED: 0,
+    CLOSED: 0,
+  };
 
   const items = listQuery.data?.data?.items || [];
   const meta = listQuery.data?.meta || { page: 1, totalPages: 1 };
@@ -107,10 +122,26 @@ export default function DashboardPage() {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Open" value={counts.OPEN} loading={statsQuery.isLoading} />
-        <StatCard label="In Progress" value={counts.IN_PROGRESS} loading={statsQuery.isLoading} />
-        <StatCard label="Resolved" value={counts.RESOLVED} loading={statsQuery.isLoading} />
-        <StatCard label="Closed" value={counts.CLOSED} loading={statsQuery.isLoading} />
+        <StatCard
+          label="Open"
+          value={counts.OPEN}
+          loading={statsQuery.isLoading}
+        />
+        <StatCard
+          label="In Progress"
+          value={counts.IN_PROGRESS}
+          loading={statsQuery.isLoading}
+        />
+        <StatCard
+          label="Resolved"
+          value={counts.RESOLVED}
+          loading={statsQuery.isLoading}
+        />
+        <StatCard
+          label="Closed"
+          value={counts.CLOSED}
+          loading={statsQuery.isLoading}
+        />
       </div>
 
       <Separator />
@@ -125,12 +156,18 @@ export default function DashboardPage() {
               onChange={(e) => setQ(e.target.value)}
             />
             <div className="mt-1 text-xs text-muted-foreground">
-              Searching: <span className="font-medium text-foreground">{debouncedQ || "—"}</span>
+              Searching:{" "}
+              <span className="font-medium text-foreground">
+                {debouncedQ || "—"}
+              </span>
             </div>
           </div>
 
-          <Select value={status} onValueChange={(v) => onFilterChange(() => setStatus(v))}>
-            <SelectTrigger>
+          <Select
+            value={status}
+            onValueChange={(v) => onFilterChange(() => setStatus(v))}
+          >
+            <SelectTrigger aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -143,8 +180,11 @@ export default function DashboardPage() {
           </Select>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-2">
-            <Select value={priority} onValueChange={(v) => onFilterChange(() => setPriority(v))}>
-              <SelectTrigger>
+            <Select
+              value={priority}
+              onValueChange={(v) => onFilterChange(() => setPriority(v))}
+            >
+              <SelectTrigger aria-label="Filter by priority">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
@@ -156,8 +196,11 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
 
-            <Select value={severity} onValueChange={(v) => onFilterChange(() => setSeverity(v))}>
-              <SelectTrigger>
+            <Select
+              value={severity}
+              onValueChange={(v) => onFilterChange(() => setSeverity(v))}
+            >
+              <SelectTrigger aria-label="Filter by severity">
                 <SelectValue placeholder="Severity" />
               </SelectTrigger>
               <SelectContent>
@@ -180,14 +223,29 @@ export default function DashboardPage() {
           {listQuery.isLoading ? (
             <ListSkeleton />
           ) : items.length === 0 ? (
-            <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground text-center">
-              No issues found. Try changing filters or create a new issue.
+            <div className="rounded-xl border bg-card p-6 text-center">
+              <p className="text-sm font-medium">No issues found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try changing filters, or create a new issue to get started.
+              </p>
+              <div className="mt-4">
+                <a
+                  href="/issues/new"
+                  className="inline-flex items-center justify-center rounded-md bg-black px-3 py-2 text-sm font-medium text-white"
+                >
+                  Create issue
+                </a>
+              </div>
             </div>
           ) : (
             <>
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{items.length}</span> item(s)
+                  Showing{" "}
+                  <span className="font-medium text-foreground">
+                    {items.length}
+                  </span>{" "}
+                  item(s)
                 </div>
                 {listQuery.isFetching ? (
                   <div className="text-sm text-muted-foreground">Updating…</div>

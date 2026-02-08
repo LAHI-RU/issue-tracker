@@ -128,7 +128,7 @@ export default function IssueDetailPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3 ">
         <div>
           <div className="text-sm text-muted-foreground">
             <Link className="underline" to="/">Dashboard</Link> / Issue
@@ -146,7 +146,7 @@ export default function IssueDetailPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
           <Button variant="outline" onClick={copyLink}>
             Copy link
           </Button>

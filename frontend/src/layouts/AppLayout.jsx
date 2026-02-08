@@ -3,12 +3,18 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { Toaster } from "sonner";
 
-
 export default function AppLayout() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:shadow"
+      >
+        Skip to content
+      </a>
+
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="font-semibold tracking-tight">
@@ -16,10 +22,16 @@ export default function AppLayout() {
           </Link>
 
           <nav className="flex items-center gap-2">
-            <Link className="text-sm text-muted-foreground hover:text-foreground" to="/">
+            <Link
+              className="text-sm text-muted-foreground hover:text-foreground"
+              to="/"
+            >
               Dashboard
             </Link>
-            <Link className="text-sm text-muted-foreground hover:text-foreground" to="/issues/new">
+            <Link
+              className="text-sm text-muted-foreground hover:text-foreground"
+              to="/issues/new"
+            >
               New Issue
             </Link>
 
@@ -38,7 +50,7 @@ export default function AppLayout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main id="main" className="mx-auto max-w-6xl px-4 py-6">
         <Toaster richColors position="top-right" />
         <Outlet />
       </main>
