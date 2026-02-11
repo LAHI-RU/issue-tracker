@@ -29,10 +29,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-sm">
+    <div className="mx-auto max-w-sm pt-36">
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
+          <CardTitle className="text-center">Login</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {serverError ? (

@@ -37,10 +37,10 @@ export default function RegisterPage() {
   const password = watch("password");
 
   return (
-    <div className="mx-auto max-w-sm">
+    <div className="mx-auto max-w-sm pt-36">
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Register</CardTitle>
+          <CardTitle className="text-center">Register</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
