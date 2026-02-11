@@ -9,7 +9,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -50,12 +50,15 @@ export default function DashboardPage() {
   // Stats query
   const statsQuery = useQuery({
     queryKey: ["issueStats"],
-    queryFn: ({ signal }) => fetchIssueStats({ signal })
+    queryFn: ({ signal }) => fetchIssueStats({ signal }),
   });
 
   // List query with cancellation
   const issuesQuery = useQuery({
-    queryKey: ["issues", { q: debouncedQ, status, priority, severity, sort, page, limit }],
+    queryKey: [
+      "issues",
+      { q: debouncedQ, status, priority, severity, sort, page, limit },
+    ],
     queryFn: ({ signal }) =>
       fetchIssues({
         q: debouncedQ,
@@ -65,9 +68,9 @@ export default function DashboardPage() {
         sort,
         page,
         limit,
-        signal
+        signal,
       }),
-    keepPreviousData: true
+    keepPreviousData: true,
   });
 
   const stats =
@@ -78,7 +81,8 @@ export default function DashboardPage() {
   const issueData = issuesQuery.data?.data || issuesQuery.data; // supports either shape
   const items = issueData?.items || issueData?.issues || [];
   const total = issueData?.total || 0;
-  const totalPages = issueData?.totalPages || Math.max(1, Math.ceil(total / limit));
+  const totalPages =
+    issueData?.totalPages || Math.max(1, Math.ceil(total / limit));
 
   const showingText = useMemo(() => {
     if (issuesQuery.isLoading) return "Loading…";
@@ -161,7 +165,10 @@ export default function DashboardPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger aria-label="Filter by status" className="w-[160px]">
+                <SelectTrigger
+                  aria-label="Filter by status"
+                  className="w-[160px]"
+                >
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -174,26 +181,32 @@ export default function DashboardPage() {
               </Select>
 
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger aria-label="Filter by priority" className="w-[160px]">
+                <SelectTrigger
+                  aria-label="Filter by priority"
+                  className="w-[160px]"
+                >
                   <SelectValue placeholder="All Priority" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Priority</SelectItem>
-                  <SelectItem value="LOW">Low</SelectItem>
-                  <SelectItem value="MEDIUM">Medium</SelectItem>
-                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="MINOR">Minor</SelectItem>
+                  <SelectItem value="MAJOR">Major</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={severity} onValueChange={setSeverity}>
-                <SelectTrigger aria-label="Filter by severity" className="w-[160px]">
+                <SelectTrigger
+                  aria-label="Filter by severity"
+                  className="w-[160px]"
+                >
                   <SelectValue placeholder="All Severity" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Severity</SelectItem>
-                  <SelectItem value="LOW">Low</SelectItem>
-                  <SelectItem value="MEDIUM">Medium</SelectItem>
-                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="MINOR">Minor</SelectItem>
+                  <SelectItem value="MAJOR">Major</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -209,7 +222,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-4 text-sm text-muted-foreground">{showingText}</div>
+          <div className="mt-4 text-sm text-muted-foreground">
+            {showingText}
+          </div>
 
           {/* Table / List */}
           <div className="mt-3 overflow-hidden rounded-2xl border bg-background/40">
@@ -222,7 +237,9 @@ export default function DashboardPage() {
               </div>
             ) : issuesQuery.isError ? (
               <div className="p-6">
-                <p className="text-sm font-medium text-destructive">Failed to load issues</p>
+                <p className="text-sm font-medium text-destructive">
+                  Failed to load issues
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {issuesQuery.error?.message}
                 </p>
@@ -287,11 +304,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Pagination */}
-          {!issuesQuery.isLoading && !issuesQuery.isError && items.length > 0 ? (
+          {!issuesQuery.isLoading &&
+          !issuesQuery.isError &&
+          items.length > 0 ? (
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Page <span className="font-medium text-foreground/80">{page}</span> of{" "}
-                <span className="font-medium text-foreground/80">{totalPages}</span>
+                Page{" "}
+                <span className="font-medium text-foreground/80">{page}</span>{" "}
+                of{" "}
+                <span className="font-medium text-foreground/80">
+                  {totalPages}
+                </span>
               </p>
 
               <div className="flex gap-2">

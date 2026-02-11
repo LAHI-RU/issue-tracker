@@ -5,7 +5,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -13,13 +13,13 @@ export default function IssueForm({
   form,
   mode = "create",
   submitting = false,
-  onSubmit
+  onSubmit,
 }) {
   const {
     register,
     setValue,
     watch,
-    formState: { errors }
+    formState: { errors },
   } = form;
 
   const priority = watch("priority") || "MEDIUM";
@@ -37,7 +37,9 @@ export default function IssueForm({
           aria-invalid={!!errors.title}
         />
         {errors.title ? (
-          <p className="mt-2 text-xs text-destructive">{errors.title.message}</p>
+          <p className="mt-2 text-xs text-destructive">
+            {errors.title.message}
+          </p>
         ) : (
           <p className="mt-2 text-xs text-muted-foreground">
             Keep it short and descriptive.
@@ -55,7 +57,9 @@ export default function IssueForm({
           aria-invalid={!!errors.description}
         />
         {errors.description ? (
-          <p className="mt-2 text-xs text-destructive">{errors.description.message}</p>
+          <p className="mt-2 text-xs text-destructive">
+            {errors.description.message}
+          </p>
         ) : (
           <p className="mt-2 text-xs text-muted-foreground">
             Helpful details make issues easier to fix.
@@ -69,7 +73,10 @@ export default function IssueForm({
           <div className="glass bento p-5 hover-lift">
             <label className="text-sm font-medium">Priority</label>
             <div className="mt-2">
-              <Select value={priority} onValueChange={(v) => setValue("priority", v)}>
+              <Select
+                value={priority}
+                onValueChange={(v) => setValue("priority", v)}
+              >
                 <SelectTrigger aria-label="Select priority">
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
@@ -90,14 +97,17 @@ export default function IssueForm({
           <div className="glass bento p-5 hover-lift">
             <label className="text-sm font-medium">Severity</label>
             <div className="mt-2">
-              <Select value={severity} onValueChange={(v) => setValue("severity", v)}>
+              <Select
+                value={severity}
+                onValueChange={(v) => setValue("severity", v)}
+              >
                 <SelectTrigger aria-label="Select severity">
                   <SelectValue placeholder="Severity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="LOW">Low</SelectItem>
-                  <SelectItem value="MEDIUM">Medium</SelectItem>
-                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="MINOR">Minor</SelectItem>
+                  <SelectItem value="MAJOR">Major</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -122,8 +132,8 @@ export default function IssueForm({
               ? "Saving..."
               : "Creating..."
             : mode === "edit"
-            ? "Save changes"
-            : "Create issue"}
+              ? "Save changes"
+              : "Create issue"}
         </Button>
       </div>
     </form>
