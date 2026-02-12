@@ -79,10 +79,11 @@ export default function DashboardPage() {
     statsQuery.data?.stats ||
     statsQuery.data?.counts;
   const issueData = issuesQuery.data?.data || issuesQuery.data; // supports either shape
+  const issueMeta = issuesQuery.data?.meta || issuesQuery.data?.data?.meta;
   const items = issueData?.items || issueData?.issues || [];
-  const total = issueData?.total || 0;
+  const total = issueMeta?.total ?? issueData?.total ?? 0;
   const totalPages =
-    issueData?.totalPages || Math.max(1, Math.ceil(total / limit));
+    issueMeta?.totalPages ?? issueData?.totalPages ?? Math.max(1, Math.ceil(total / limit));
 
   const showingText = useMemo(() => {
     if (issuesQuery.isLoading) return "Loading…";

@@ -7,9 +7,23 @@ function buildFilter(query) {
   if (query.priority) filter.priority = query.priority;
   if (query.severity) filter.severity = query.severity;
 
-  // Search: prefer text index if q exists
+  // Search: safe, case-insensitive partial match across title/description
   if (query.q) {
-    filter.$text = { $search: query.q };
+    const trimmed = String(query.q).trim();
+    if (trimmed) {
+      const terms = trimmed.split(/\s+/).filter(Boolean);
+      const clauses = terms.map((term) => {
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(escaped, "i");
+        return { $or: [{ title: re }, { description: re }] };
+      });
+
+      if (clauses.length === 1) {
+        filter.$or = clauses[0].$or;
+      } else if (clauses.length > 1) {
+        filter.$and = clauses;
+      }
+    }
   }
 
   return filter;
@@ -41,14 +55,10 @@ async function listIssues(req, res, next) {
     const filter = buildFilter({ q, status, priority, severity });
     const sortObj = sort === "oldest" ? { createdAt: 1 } : { createdAt: -1 };
 
-    // If using $text search, sorting by textScore can be useful
-    const projection = q ? { score: { $meta: "textScore" } } : {};
-    const sortFinal = q ? { score: { $meta: "textScore" }, ...sortObj } : sortObj;
-
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      Issue.find(filter, projection).sort(sortFinal).skip(skip).limit(limit).lean(),
+      Issue.find(filter).sort(sortObj).skip(skip).limit(limit).lean(),
       Issue.countDocuments(filter)
     ]);
 
