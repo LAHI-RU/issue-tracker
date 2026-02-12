@@ -31,14 +31,14 @@ export default function IssueFormPage() {
       title: "",
       description: "",
       priority: "MEDIUM",
-      severity: "MEDIUM"
+      severity: "MINOR"
     },
     values: isEdit && issue
       ? {
           title: issue.title || "",
           description: issue.description || "",
           priority: issue.priority || "MEDIUM",
-          severity: issue.severity || "MEDIUM"
+          severity: issue.severity || "MINOR"
         }
       : undefined
   });

@@ -23,7 +23,7 @@ export default function IssueForm({
   } = form;
 
   const priority = watch("priority") || "MEDIUM";
-  const severity = watch("severity") || "MEDIUM";
+  const severity = watch("severity") || "MINOR";
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -84,6 +84,7 @@ export default function IssueForm({
                   <SelectItem value="LOW">Low</SelectItem>
                   <SelectItem value="MEDIUM">Medium</SelectItem>
                   <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="URGENT">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
